@@ -1,6 +1,5 @@
 import json
-from Bot import Bot
-from ext.commands import command, Scenario
+from . import Bot, command, Scenario
 from api.KeyboardMaker import KeyBoardMaker, Color
 
 group_id = 0
