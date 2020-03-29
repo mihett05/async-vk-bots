@@ -1,4 +1,4 @@
-from api.API import API
+from ..api.API import API
 
 
 class Context:
