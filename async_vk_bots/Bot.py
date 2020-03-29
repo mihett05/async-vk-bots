@@ -2,8 +2,8 @@ import asyncio
 import re
 import json
 from aiohttp import web
-from api.API import API
-from api.LongPoll import LongPoll
+from .api.API import API
+from .api.LongPoll import LongPoll
 
 
 class Bot:
