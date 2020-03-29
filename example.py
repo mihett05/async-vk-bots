@@ -1,6 +1,6 @@
 import json
-from . import Bot, command, Scenario
-from api.KeyboardMaker import KeyBoardMaker, Color
+from async_vk_bots import Bot, command, Scenario
+from async_vk_bots.api.KeyboardMaker import KeyBoardMaker, Color
 
 group_id = 0
 token = "token"

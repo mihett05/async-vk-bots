@@ -1,6 +1,6 @@
-from Bot import Bot
-from .Scenario import Scenario
+from async_vk_bots.Bot import Bot
 from .Context import Context
+from .Scenario import Scenario
 
 
 def command(regexp):
