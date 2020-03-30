@@ -1,14 +1,14 @@
-from async_vk_bots.Bot import Bot
 from .Context import Context
 from .Scenario import Scenario
 
 
-def command(regexp):
-    def decorator(func):
-        if Bot.bot:
-            Bot.bot.add_command(regexp, func)
-        return func
-    return decorator
+def create_command(commands):
+    def command(regexp):
+        def decorator(func):
+            commands[regexp] = func
+            return func
+        return decorator
+    return command
 
 
 def need_ability(abilities_list):
