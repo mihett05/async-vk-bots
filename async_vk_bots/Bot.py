@@ -88,15 +88,21 @@ class Bot:
             print(e)
             return web.Response(text="error", content_type="text/plain", status=500)
 
-    async def __run(self, token):
+    async def __run(self, token, debug):
         self._token = token
         self.api = API(self._token, self._v, self._loop)
         longpoll = LongPoll(self.api, self._group_id)
         async for event in longpoll.listen():
-            await self.__handler(event)
+            if debug:
+                await self.__handler(event)
+            else:
+                try:
+                    await self.__handler(event)
+                except BaseException as e:
+                    print(e)
 
-    def run(self, token):
+    def run(self, token, debug=False):
         print("Started")
-        self._loop.run_until_complete(self.__run(token))
+        self._loop.run_until_complete(self.__run(token, debug))
 
 

@@ -19,5 +19,3 @@ def need_ability(abilities_list):
                     return await func(msg, data, reply)
         return wrapper
     return decorator
-
-
