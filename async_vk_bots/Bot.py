@@ -8,15 +8,13 @@ from .ext.commands import create_command
 
 
 class BaseBot:
-    commands = None
-    listeners = None
+    commands = dict()
+    listeners = dict()
 
     def __init__(self, group_id, version="5.103", event_loop=None):
         self._token = ""
         self._v = version
         self._group_id = group_id
-        self.commands = dict()
-        self.listeners = dict()
         self._scenarios = []
         self._confirm = ""
         if event_loop is None:
