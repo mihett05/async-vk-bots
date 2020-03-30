@@ -16,6 +16,8 @@ class BaseBot:
         self._v = version
         self._group_id = group_id
         self._scenarios = []
+        self._commands = dict()
+        self._listeners = dict()
         self._confirm = ""
         if event_loop is None:
             event_loop = asyncio.get_event_loop()
@@ -36,9 +38,9 @@ class BaseBot:
         return decorator
 
     def add_command(self, regexp, func):
-        if regexp not in self.commands:
-            self.commands[regexp] = list()
-        self.commands[regexp].append(func)
+        if regexp not in self._commands:
+            self._commands[regexp] = list()
+        self._commands[regexp].append(func)
 
     def add_scenario(self, scenario):
         if scenario not in self._scenarios:
@@ -48,9 +50,9 @@ class BaseBot:
         def decorator(func):
             async def wrapper(data):
                 await func(data)
-            if event not in self.listeners:
-                self.listeners[event] = list()
-            self.listeners[event].append(wrapper)
+            if event not in self._listeners:
+                self._listeners[event] = list()
+            self._listeners[event].append(wrapper)
             return wrapper
         return decorator
 
@@ -61,7 +63,7 @@ class BaseBot:
             elif request["type"] == "message_new":
                 msg = request["object"]
                 for scenario in self._scenarios:
-                    if await scenario.check_for_entry_point(request):
+                    if await scenario.check_handlers(request):
                         return "ok"
                 try:
                     async def reply(message, **kwargs):
@@ -70,12 +72,16 @@ class BaseBot:
                                           map(lambda x: x if re.fullmatch(x, msg["message"]["text"]) else None,
                                               self.commands)))[0]
                     for func in self.commands[command]:
+                        await func(self, msg, re.findall(command, msg["message"]["text"]), reply)
+                    for func in self._commands[command]:
                         await func(msg, re.findall(command, msg["message"]["text"]), reply)
                 except IndexError:
                     if hasattr(self._command_not_found, "__call__"):
                         await self._command_not_found(msg)
             if request["type"] in self.listeners:
                 for func in self.listeners[request["type"]]:
+                    await func(request["object"])
+                for func in self._listeners[request["type"]]:
                     await func(request["object"])
             return "ok"
         except KeyError:

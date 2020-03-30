@@ -2,28 +2,43 @@ import json
 from .Context import Context
 
 
+def create_handler(handlers):
+    def handler(button_type):
+        def decorator(func):
+            handlers[button_type] = func
+            return func
+        return decorator
+    return handler
+
+
 class Scenario:
+    handlers = None
 
-    def __init__(self, entry_points):
-        self._entry_points = entry_points
-        self._handlers = dict()
+    def __init__(self, bot):
+        self.bot = bot
+        self._handlers = []
 
-    async def check_for_entry_point(self, event):
+    async def check_handlers(self, event):
         if "payload" in event["object"]["message"]:
             payload = json.loads(event["object"]["message"]["payload"])
             if "button" in payload:
-                for point in self._entry_points:
-                    if point == payload["button"]:
-                        ctx = Context(event, self._entry_points[point])
-                        res = await self._handlers[self._entry_points[point]](ctx)
+                for button_type in self.handlers:
+                    if button_type == payload["button"]:
+                        ctx = Context(event, 0)
+                        await self.handlers[button_type](self, ctx)
+                        return True
+                for button_type in self._handlers:
+                    if button_type == payload["button"]:
+                        ctx = Context(event, 0)
+                        await self._handlers[button_type](ctx)
                         return True
         return False
 
-    def handler(self, state):
-        def decorator(func):
-            async def wrapper(ctx):
-                return await func(ctx)
-            self._handlers[state] = wrapper
-            return wrapper
-        return decorator
+    def add_handler(self, button_type, func):
+        self._handlers[button_type] = func
 
+    def handler(self, button_type):
+        def decorator(func):
+            self.add_handler(button_type, func)
+            return func
+        return decorator
