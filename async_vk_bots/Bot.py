@@ -58,6 +58,13 @@ class BaseBot:
 
     async def __handler(self, request):
         try:
+    	    if request["type"] in self.listeners:
+                for func in self.listeners[request["type"]]:
+                    await func(request["object"])
+            elif request["type"] in self._listeners:
+                for func in self._listeners[request["type"]]:
+                    await func(request["object"])
+            
             if request["type"] == "confirmation":
                 return self._confirm
             elif request["type"] == "message_new":
@@ -78,11 +85,6 @@ class BaseBot:
                 except IndexError:
                     if hasattr(self._command_not_found, "__call__"):
                         await self._command_not_found(msg)
-            if request["type"] in self.listeners:
-                for func in self.listeners[request["type"]]:
-                    await func(request["object"])
-                for func in self._listeners[request["type"]]:
-                    await func(request["object"])
             return "ok"
         except KeyError:
             return "not vk"
