@@ -58,7 +58,7 @@ class BaseBot:
 
     async def __handler(self, request):
         try:
-    	    if request["type"] in self.listeners:
+            if request["type"] in self.listeners:
                 for func in self.listeners[request["type"]]:
                     await func(request["object"])
             elif request["type"] in self._listeners:
