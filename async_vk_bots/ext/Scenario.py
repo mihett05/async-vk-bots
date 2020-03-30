@@ -16,7 +16,7 @@ class Scenario:
 
     def __init__(self, bot):
         self.bot = bot
-        self._handlers = []
+        self._handlers = dict()
 
     async def check_handlers(self, event):
         if "payload" in event["object"]["message"]:
