@@ -35,7 +35,7 @@ class API:
                    dont_parse_links: bool = True, disable_mentions: bool = False):
         params = {
             "peer_id": peer_id,
-            "message": message,
+            "message": message.replace("+", "%2B"),
             "random_id": random.randint(0, 18446744073709551615),
             "attachment": attachment,
             "reply_to": reply_to,
