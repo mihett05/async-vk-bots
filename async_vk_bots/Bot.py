@@ -77,11 +77,17 @@ class BaseBot:
                         await self.api.send(peer_id=msg["message"]["peer_id"], message=message, **kwargs)
                     command = list(filter(lambda x: x is not None,
                                           map(lambda x: x if re.fullmatch(x, msg["message"]["text"]) else None,
-                                              self.commands)))[0]
-                    for func in self.commands[command]:
-                        await func(self, msg, re.findall(command, msg["message"]["text"]), reply)
-                    for func in self._commands[command]:
-                        await func(msg, re.findall(command, msg["message"]["text"]), reply)
+                                              self.commands)))
+                    if len(command) > 0:
+                        command = command[0]
+                        for func in self.commands[command]:
+                            await func(self, msg, re.findall(command, msg["message"]["text"]), reply)
+                    else:
+                        command = list(filter(lambda x: x is not None,
+                                              map(lambda x: x if re.fullmatch(x, msg["message"]["text"]) else None,
+                                                  self._commands)))[0]
+                        for func in self._commands[command]:
+                            await func(msg, re.findall(command, msg["message"]["text"]), reply)
                 except IndexError:
                     if hasattr(self._command_not_found, "__call__"):
                         await self._command_not_found(msg)
