@@ -1,4 +1,4 @@
-from ..api.API import API
+from async_vk_bots.api.API import API
 
 
 class Context:

@@ -1,23 +1,20 @@
 import asyncio
-import re
 import json
 from aiohttp import web
 from .api.API import API
 from .api.LongPoll import LongPoll
-from .ext.commands import create_command
+from .ext.Controller import Controller
+from .ext.View import View
 
 
-class BaseBot:
-    commands = dict()
-    listeners = dict()
-
+class Bot:
     def __init__(self, group_id, version="5.103", event_loop=None):
         self._token = ""
         self._v = version
         self._group_id = group_id
         self._scenarios = []
-        self._commands = dict()
         self._listeners = dict()
+        self._controllers = []
         self._confirm = ""
         if event_loop is None:
             event_loop = asyncio.get_event_loop()
@@ -25,22 +22,30 @@ class BaseBot:
         self._command_not_found = None
         self.api = None
 
-    def create_command(self):
-        return create_command(self.commands)
-
     async def on_ready(self):
         pass
 
-    def command(self, regexp):
+    def command(self, regexp_or_func):
         def decorator(func):
-            self.add_command(regexp, func)
+            class _CustomView(View):
+                async def all(self):
+                    await func(self.message, self.data, self.reply)
+            if hasattr(regexp_or_func, "__call__"):
+                class _CustomController(Controller):
+                    view_cls = _CustomView
+
+                    def get_data(self, text):
+                        res = regexp_or_func(text)
+                        return bool(res), res
+            elif isinstance(regexp_or_func, str):
+                class _CustomController(Controller):
+                    command = regexp_or_func
+                    view_cls = _CustomView
+            else:
+                raise Exception("regexp_or_func must be str or function")
+            self.add_controller(_CustomController)
             return func
         return decorator
-
-    def add_command(self, regexp, func):
-        if regexp not in self._commands:
-            self._commands[regexp] = list()
-        self._commands[regexp].append(func)
 
     def add_scenario(self, scenario):
         if scenario not in self._scenarios:
@@ -56,10 +61,13 @@ class BaseBot:
             return wrapper
         return decorator
 
+    def add_controller(self, controller):
+        self._controllers.append(controller())
+
     async def __handler(self, request):
         try:
-            if request["type"] in self.listeners:
-                for func in self.listeners[request["type"]]:
+            if request["type"] in self._listeners:
+                for func in self._listeners[request["type"]]:
                     await func(request["object"])
             elif request["type"] in self._listeners:
                 for func in self._listeners[request["type"]]:
@@ -72,25 +80,11 @@ class BaseBot:
                 for scenario in self._scenarios:
                     if await scenario.check_handlers(request):
                         return "ok"
-                try:
-                    async def reply(message, **kwargs):
-                        await self.api.send(peer_id=msg["message"]["peer_id"], message=message, **kwargs)
-                    command = list(filter(lambda x: x is not None,
-                                          map(lambda x: x if re.fullmatch(x, msg["message"]["text"]) else None,
-                                              self.commands)))
-                    if len(command) > 0:
-                        command = command[0]
-                        for func in self.commands[command]:
-                            await func(self, msg, re.findall(command, msg["message"]["text"]), reply)
-                    else:
-                        command = list(filter(lambda x: x is not None,
-                                              map(lambda x: x if re.fullmatch(x, msg["message"]["text"]) else None,
-                                                  self._commands)))[0]
-                        for func in self._commands[command]:
-                            await func(msg, re.findall(command, msg["message"]["text"]), reply)
-                except IndexError:
-                    if hasattr(self._command_not_found, "__call__"):
-                        await self._command_not_found(msg)
+                controllers = filter(lambda x: x.get_data(msg["message"]["text"])[0], self._controllers)
+                for controller in controllers:
+                    data = controller.get_data(msg["message"]["text"])[1]
+                    await controller.view(self.api, msg, data)
+
             return "ok"
         except KeyError:
             return "not vk"

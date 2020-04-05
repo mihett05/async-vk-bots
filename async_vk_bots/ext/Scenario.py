@@ -1,5 +1,5 @@
 import json
-from .Context import Context
+from async_vk_bots.ext.DataModels.Context import Context
 
 
 def create_handler(handlers):
