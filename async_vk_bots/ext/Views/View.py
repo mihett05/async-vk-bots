@@ -1,4 +1,4 @@
-from .DataModels.Message.Message import Message
+from async_vk_bots.ext.DataModels.Message.Message import Message
 
 
 class View:

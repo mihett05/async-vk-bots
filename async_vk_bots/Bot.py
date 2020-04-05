@@ -3,8 +3,8 @@ import json
 from aiohttp import web
 from .api.API import API
 from .api.LongPoll import LongPoll
-from .ext.Controller import Controller
-from .ext.View import View
+from async_vk_bots.ext import Controller
+from async_vk_bots.ext import View
 
 
 class Bot:
