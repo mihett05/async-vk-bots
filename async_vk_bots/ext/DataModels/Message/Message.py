@@ -1,4 +1,4 @@
-from ..Attachment import Attachment
+from async_vk_bots.ext.DataModels.Attachment.parse_attachment import parse_attachment
 from ..Geo.Geo import Geo
 from .ChatAction import ChatAction
 
@@ -23,7 +23,7 @@ class Message:
     def __init__(self, event_message: dict):
         for key in event_message:
             if key == "attachments":
-                self.attachments = [Attachment.parse(attachment) for attachment in event_message[key]]
+                self.attachments = [parse_attachment(attachment) for attachment in event_message[key]]
             elif key == "fwd_messages":
                 self.fwd_messages = [Message(msg) for msg in event_message[key]]
             elif key == "reply_message":

@@ -9,13 +9,9 @@ class Attachment:
         self.access_key = ""
         if "access_key" in attachment:
             self.access_key = attachment["access_key"]
-        self.obj = attachment[self.type]
-        self.id = self.obj["id"]
-        self.owner_id = self.obj["owner_id"]
-
-    @staticmethod
-    def parse(attachment):
-        return Attachment(attachment)
+        self._obj = attachment[self.type]
+        for key in self._obj:
+            setattr(self, key, self._obj[key])
 
     def to_vk(self):
         return f"{self.type}{self.owner_id}_{self.id}_{self.access_key}"
