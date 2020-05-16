@@ -32,7 +32,7 @@ class API:
 
     async def send(self, peer_id: int, message: str, attachment: str = None, reply_to: int = None,
                    forward_messages: list = None, sticker_id: int = None, keyboard: dict = None, payload: dict = None,
-                   dont_parse_links: bool = True, disable_mentions: bool = False):
+                   dont_parse_links: bool = True, disable_mentions: bool = False, carousel: str = None):
         params = {
             "peer_id": peer_id,
             "message": message.replace("+", "%2B"),
@@ -44,7 +44,8 @@ class API:
             "keyboard": keyboard,
             "payload": payload,
             "dont_parse_links": int(dont_parse_links),
-            "disable_mentions": int(disable_mentions)
+            "disable_mentions": int(disable_mentions),
+            "carousel": carousel
         }
         resp = await self.call("messages.send", **params)
         if "error" in resp:
