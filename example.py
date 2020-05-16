@@ -1,7 +1,7 @@
 import json
 from async_vk_bots import Bot
 from async_vk_bots.api.KeyboardMaker import KeyBoardMaker, Color
-from async_vk_bots.ext import View, Controller
+from async_vk_bots.ext import View, Controller, controller
 token = ""
 group_id = 0
 
