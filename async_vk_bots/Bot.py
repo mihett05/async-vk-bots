@@ -80,7 +80,7 @@ class Bot:
                 for scenario in self._scenarios:
                     if await scenario.check_handlers(request):
                         return "ok"
-                controllers = filter(lambda x: x.get_data(msg["message"]["text"])[0], self._controllers)
+                controllers = list(filter(lambda x: x.get_data(msg["message"]["text"])[0], self._controllers))
                 for controller in controllers:
                     data = controller.get_data(msg["message"]["text"])[1]
                     await controller.view(self.api, msg, data)

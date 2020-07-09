@@ -11,10 +11,10 @@ class View:
     async def reply(self, message, **kwargs):
         await self.api.send(peer_id=self.message.peer_id, message=message, **kwargs)
 
-    async def get(self):
+    async def text(self):
         pass
 
-    async def post(self):
+    async def payload(self):
         pass
 
     async def all(self):
@@ -23,9 +23,9 @@ class View:
     async def view(self):
         await self.all()
         if "payload" in self.event["message"]:
-            await self.post()
+            await self.payload()
         else:
-            await self.get()
+            await self.text()
 
     @classmethod
     def as_view(cls):

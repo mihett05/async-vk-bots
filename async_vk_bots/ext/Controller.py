@@ -10,7 +10,7 @@ class Controller:
             self.connect(bot)
 
     def get_data(self, text):
-        res = re.fullmatch(self.command, text.lower())
+        res = re.fullmatch(self.command.lower(), text.lower())
         return bool(res), res
 
     @property
