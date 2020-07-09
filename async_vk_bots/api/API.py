@@ -50,3 +50,15 @@ class API:
         resp = await self.call("messages.send", **params)
         if "error" in resp:
             raise APIError(json.dumps(resp["error"]))
+
+    async def send_message_event_answer(self, event_id, user_id, peer_id, event_data):
+        params = {
+            "event_id": str(event_id),
+            "user_id": int(user_id),
+            "peer_id": int(peer_id),
+            "event_data": json.dumps(event_data) if isinstance(event_data, dict) else str(event_data)
+        }
+
+        resp = await self.call("messages.sendMessageEventAnswer", **params)
+        if "error" in resp:
+            raise APIError(json.dumps(resp["error"]))

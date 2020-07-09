@@ -1,4 +1,5 @@
 import json
+from .APIError import APIError
 
 
 class Color:
@@ -9,7 +10,9 @@ class Color:
 
 
 class KeyBoardMaker:
-    def __init__(self, one_time=True, inline=False):
+    def __init__(self, one_time=True, inline=False, bot=None):
+        self.bot = bot
+        self.__callbacks = dict()
         if inline:
             self.config = {
                 "buttons": [],
@@ -49,6 +52,32 @@ class KeyBoardMaker:
         })
         return self
 
-    def generate(self):
+    def bind(self, bot):
+        self.bot = bot
+
+    def callback(self, label, color, payload):
+        def decorator(func):
+            self.__callbacks[payload] = func
+            return self
+        payload = json.dumps(payload) if isinstance(payload, dict) else str(payload)
+        if len(payload) > 255:
+            raise APIError("Max length of payload is 255 symbols")
+        self.row.append({
+            "color": color,
+            "action": {
+                "type": "callback",
+                "payload": payload,
+                "label": label
+            }
+        })
+        return decorator
+
+    def generate(self, bot=None):
+        if not self.bot:
+            self.bot = bot
+        if len(self.__callbacks) > 0 and not self.bot:
+            raise Exception("Can't generate callbacks without providing bot")
+        for callback in self.__callbacks:
+            self.bot.event(callback)(self.__callbacks[callback])
         self.add_row()
         return json.dumps(self.config)

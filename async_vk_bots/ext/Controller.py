@@ -19,8 +19,9 @@ class Controller:
             return self.view_cls.as_view()
         raise Exception("view_cls must implement as_view function")
 
-    def connect(self, bot):
-        bot.add_controller(self)
+    @classmethod
+    def connect(cls, bot):
+        bot.add_controller(cls)
 
 
 def controller(command_, search=False, bot=None):
