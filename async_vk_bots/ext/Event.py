@@ -24,11 +24,9 @@ class Event:
             event_data = json.dumps(event_data)
         else:
             event_data = str(event_data)
-        await self.api.send_message_event_answer(model.event_id, model.user_id, model.peer_id, event_data)
+        if event_data:
+            await self.api.send_message_event_answer(model.event_id, model.user_id, model.peer_id, event_data)
 
     @classmethod
     def connect(cls, bot):
         bot.add_event(cls)
-
-
-
