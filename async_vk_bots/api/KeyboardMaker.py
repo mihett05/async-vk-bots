@@ -1,4 +1,5 @@
 import json
+from typing import Union, Optional
 from .APIError import APIError
 
 
@@ -30,24 +31,25 @@ class KeyBoardMaker:
         self.row.clear()
         return self
 
-    def add_button(self, text: str, color: str, payload: str):
+    def add_button(self, text: str, color: str, payload: Union[str, dict]):
         self.row.append({
             "action": {
                 "type": "text",
                 "label": text,
-                "payload": payload
+                "payload": json.dumps(payload) if isinstance(payload, dict) else str(payload)
             },
             "color": color
         })
         return self
 
-    def add_link(self, label: str, link: str, payload: dict = None):
+    def add_link(self, label: str, link: str, payload: Optional[Union[str, dict]]):
         self.row.append({
             "action": {
                 "type": "open_link",
                 "label": label,
                 "link": link,
-                "payload": payload if payload else json.dumps({"button": "0"})
+                "payload": json.dumps(payload) if isinstance(payload, dict) else str(payload)
+                if payload else json.dumps({"button": "0"})
             }
         })
         return self
@@ -55,7 +57,7 @@ class KeyBoardMaker:
     def bind(self, bot):
         self.bot = bot
 
-    def callback(self, label, color, payload):
+    def callback(self, label: str, color: str, payload):
         def decorator(func):
             self.__callbacks[payload] = func
             return self

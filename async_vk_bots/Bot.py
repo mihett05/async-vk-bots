@@ -120,7 +120,7 @@ class Bot:
     def get_web_hook(self, token, confirm_str):
         self._confirm = confirm_str
         self._token = token
-        self.api = API(self._token, self._v, self._loop)
+        self.api = API(self._token, self._v, self._group_id, self._loop)
         return self.__web_hook
 
     async def __web_hook(self, request):
@@ -136,7 +136,7 @@ class Bot:
 
     async def __run(self, token, debug):
         self._token = token
-        self.api = API(self._token, self._v, self._loop)
+        self.api = API(self._token, self._v, self._group_id, self._loop)
         longpoll = LongPoll(self.api, self._group_id)
         await self.on_ready()
         async for event in longpoll.listen():
