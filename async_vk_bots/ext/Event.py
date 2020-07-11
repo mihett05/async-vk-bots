@@ -22,7 +22,7 @@ class Event:
         event_data = await self.answer(model)
         if isinstance(event_data, dict):
             event_data = json.dumps(event_data)
-        else:
+        elif event_data:
             event_data = str(event_data)
         if event_data:
             await self.api.send_message_event_answer(model.event_id, model.user_id, model.peer_id, event_data)
