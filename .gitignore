@@ -129,6 +129,6 @@ dmypy.json
 .pyre/
 
 # Other
-main.py
+/main.py
 pyproject.toml
 .idea/

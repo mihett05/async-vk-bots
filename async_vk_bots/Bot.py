@@ -9,7 +9,7 @@ from .ext.DataModels.Message.MessageEvent import MessageEvent
 
 
 class Bot:
-    def __init__(self, group_id, version="5.120", event_loop=None):
+    def __init__(self, group_id, version="5.120", loop=None):
         self._token = ""
         self._v = version
         self._group_id = group_id
@@ -18,14 +18,15 @@ class Bot:
         self._controllers = []
         self._events = []
         self._confirm = ""
-        if event_loop is None:
-            event_loop = asyncio.get_event_loop()
-        self._loop = event_loop
+        if loop is None:
+            event = asyncio.get_event_loop()
+        self._loop = loop
         self._command_not_found = None
         self.api = None
+        self._ready_cb = None
 
-    async def on_ready(self):
-        pass
+    async def on_ready(self, func):
+        self._ready_cb = func
 
     def command(self, regexp_or_func):
         def decorator(func):
@@ -138,7 +139,8 @@ class Bot:
         self._token = token
         self.api = API(self._token, self._v, self._group_id, self._loop)
         longpoll = LongPoll(self.api, self._group_id)
-        await self.on_ready()
+        if hasattr(self._ready_cb, "__call__"):
+            await self._ready_cb()
         async for event in longpoll.listen():
             if debug:
                 await self.__handler(event)
