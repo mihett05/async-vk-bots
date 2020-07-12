@@ -2,14 +2,14 @@
 Основной класс для создания чат-бота
 
 ## Методы
-###Bot(group_id, version="5.120", loop=None)
+### Bot(group_id, version="5.120", loop=None)
 Инициализация бота, если loop равен None, то значение loop берётся как `asyncio.get_event_loop()`
 ```python
 from async_vk_bots import Bot
 bot = Bot(123456789)
 ```
 
-###on_ready(func)
+### on_ready(func)
 Декоратор для передачи колбэка, который будет вызвана после запуска бота.
 ```python
 @bot.on_ready
@@ -17,7 +17,7 @@ async def ready():
     pass
 ```
 
-###command(regexp_or_func)(func)
+### command(regexp_or_func)(func)
 Декоратор для передачи колбэка, вызваного при получении сообщения от пользователя,
 соответствующему регулярном выражению или при возврате True
 от переданной в regexp_or_func функции.
@@ -32,7 +32,7 @@ async def hi(msg, data, reply):
     await reply(f"Hi, user with id {msg.from_id}")
 ```
 
-###event(regexp_or_func)(func)
+### event(regexp_or_func)(func)
 Декоратор для передачи колбэка, вызваного при получении payload
 от callback кнопки, соответствующему регулярному выражению regexp_or_func,
 или возврате True от вызова функции regexp_or_func().
