@@ -13,7 +13,6 @@ class Bot:
         self._token = ""
         self._v = version
         self._group_id = group_id
-        self._scenarios = []
         self._listeners = dict()
         self._controllers = []
         self._events = []
@@ -68,10 +67,6 @@ class Bot:
             return func
         return decorator
 
-    def add_scenario(self, scenario):
-        if scenario not in self._scenarios:
-            self._scenarios.append(scenario)
-
     def on(self, event: str):
         def decorator(func):
             async def wrapper(data):
@@ -101,9 +96,6 @@ class Bot:
                 return self._confirm
             elif request["type"] == "message_new":
                 msg = request["object"]
-                for scenario in self._scenarios:
-                    if await scenario.check_handlers(request):
-                        return "ok"
                 controllers = list(filter(lambda x: x.get_data(msg["message"]["text"])[0], self._controllers))
                 for controller in controllers:
                     data = controller.get_data(msg["message"]["text"])[1]
@@ -151,7 +143,6 @@ class Bot:
                     print(e)
 
     def run(self, token, debug=False):
-        print("Started")
         self._loop.run_until_complete(self.__run(token, debug))
 
 
