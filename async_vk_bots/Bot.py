@@ -3,7 +3,7 @@ import json
 from aiohttp import web
 from .api.API import API
 from .api.LongPoll import LongPoll
-from async_vk_bots.ext import Controller, Event
+from async_vk_bots.ext import Controller, Event, command
 from async_vk_bots.ext import View
 from .ext.DataModels.Message.MessageEvent import MessageEvent
 
@@ -13,41 +13,25 @@ class Bot:
         self._token = ""
         self._v = version
         self._group_id = group_id
-        self._listeners = dict()
-        self._controllers = []
-        self._events = []
         self._confirm = ""
-        if loop is None:
-            event = asyncio.get_event_loop()
+
+        self._listeners = dict()
+        self._commands = []
+        self._events = []
+
         self._loop = loop
+        if not isinstance(self._loop, asyncio.BaseEventLoop):
+            self._loop = asyncio.get_event_loop()
+
         self._command_not_found = None
         self.api = None
         self._ready_cb = None
 
-    async def on_ready(self, func):
+    def on_ready(self, func):
         self._ready_cb = func
 
-    def command(self, regexp_or_func):
-        def decorator(func):
-            class _CustomView(View):
-                async def all(self):
-                    await func(self.message, self.data, self.reply)
-            if hasattr(regexp_or_func, "__call__"):
-                class _CustomController(Controller):
-                    view_cls = _CustomView
-
-                    def get_data(self, text):
-                        res = regexp_or_func(text)
-                        return bool(res), res
-            elif isinstance(regexp_or_func, str):
-                class _CustomController(Controller):
-                    command = regexp_or_func
-                    view_cls = _CustomView
-            else:
-                raise Exception("regexp_or_func must be str or function")
-            self.add_controller(_CustomController)
-            return func
-        return decorator
+    def command(self, re_command, find_type="fullmatch"):
+        return command(re_command, find_type, self)
 
     def event(self, regexp_or_func):
         def decorator(func):
@@ -77,8 +61,8 @@ class Bot:
             return wrapper
         return decorator
 
-    def add_controller(self, controller):
-        self._controllers.append(controller())
+    def add_command(self, controller):
+        self._commands.append(controller())
 
     def add_event(self, event):
         self._events.append(event)
@@ -95,11 +79,9 @@ class Bot:
             if request["type"] == "confirmation":
                 return self._confirm
             elif request["type"] == "message_new":
-                msg = request["object"]
-                controllers = list(filter(lambda x: x.get_data(msg["message"]["text"])[0], self._controllers))
-                for controller in controllers:
-                    data = controller.get_data(msg["message"]["text"])[1]
-                    await controller.view(self.api, msg, data)
+                event = request["object"]
+                for controller in self._commands:
+                    await controller.handle(self.api, event)
             elif request["type"] == "message_event":
                 obj = request["object"]
                 events = list(filter(lambda x: x.get_data(json.dumps(obj["payload"]))[0], self._events))
@@ -132,7 +114,10 @@ class Bot:
         self.api = API(self._token, self._v, self._group_id, self._loop)
         longpoll = LongPoll(self.api, self._group_id)
         if hasattr(self._ready_cb, "__call__"):
-            await self._ready_cb()
+            if asyncio.iscoroutinefunction(self._ready_cb):
+                await self._ready_cb()
+            else:
+                self._ready_cb()
         async for event in longpoll.listen():
             if debug:
                 await self.__handler(event)
