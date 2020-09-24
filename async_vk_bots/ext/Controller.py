@@ -1,41 +1,83 @@
 import re
+from asyncio import iscoroutinefunction
+
+from async_vk_bots.ext.DataModels.Message.Message import Message
 
 
 class Controller:
-    command = r""
-    view_cls = None
+    def __init__(self, api, event, data):
+        self.api = api
+        self.event = event
+        self.model = Message(event["message"])
+        self.data = data
 
-    def __init__(self, bot=None):
+    async def reply(self, message, **kwargs):
+        await self.api.send(peer_id=self.model.peer_id, message=message, **kwargs)
+
+    async def text(self):
+        pass
+
+    async def payload(self):
+        pass
+
+    async def message(self):
+        if "payload" in self.event["message"]:
+            if iscoroutinefunction(self.payload):
+                await self.payload()
+            else:
+                self.payload()
+        else:
+            if iscoroutinefunction(self.text):
+                await self.text()
+            else:
+                self.text()
+
+
+class _ControllerCommand:
+    def __init__(self, re_func, controller_cls):
+        self.re_func = re_func
+        self.controller = controller_cls
+
+    async def handle(self, api, event):
+        data = self.re_func(event["message"]["text"])
+        if data:
+            await self.controller(api, event, data).message()
+
+
+def _get_re_func(exp, find_type="fullmatch"):
+    if find_type in ["fullmatch", "search", "findall", "match"]:
+        def _find_func(txt):
+            find_func = getattr(re, find_type)
+            res = find_func(exp, txt)
+            if find_type != "findall" and res:
+                return list(res.groups()) or [txt]
+            return res or []
+        return _find_func
+    else:
+        raise Exception(f"Unknown find_type: {find_type}")
+
+
+def controller(re_command, find_type="fullmatch", bot=None):
+    def decorator(controller_cls: type):
+        command_cls = type(f"_{controller_cls.__name__}Command", (_ControllerCommand,), {
+            "__init__": lambda self: _ControllerCommand.__init__(
+                self, _get_re_func(re_command, find_type), controller_cls
+            )
+        })
         if bot:
-            self.connect(bot)
-
-    def get_data(self, text):
-        res = re.fullmatch(self.command.lower(), text.lower())
-        return bool(res), res
-
-    @property
-    def view(self):
-        if hasattr(self.view_cls, "as_view") and hasattr(self.view_cls.as_view, "__call__"):
-            return self.view_cls.as_view()
-        raise Exception("view_cls must implement as_view function")
-
-    @classmethod
-    def connect(cls, bot):
-        bot.add_controller(cls)
+            bot.add_command(command_cls)
+        return command_cls
+    return decorator
 
 
-def controller(command_, search=False, bot=None):
-    def decorator(view_cls_):
-        class ControllerView(Controller):
-            command = command_
-            view_cls = view_cls_
-
-            def get_data(self, text):
-                if search:
-                    res = re.search(self.command, text)
-                    return bool(res), res
-                return super().get_data(text)
-        if bot:
-            bot.add_controller(ControllerView)
-        return ControllerView
+def command(re_command, find_type="fullmatch", bot=None):
+    def decorator(func):
+        @controller(re_command, find_type, bot)
+        class __Command(Controller):
+            async def message(self):
+                if iscoroutinefunction(func):
+                    await func(self.model, self.data, self.reply)
+                else:
+                    func(self.model, self.data, self.reply)
+        return func
     return decorator

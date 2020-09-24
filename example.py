@@ -1,65 +1,39 @@
+import json
 from async_vk_bots import Bot
 from async_vk_bots.api.KeyboardMaker import KeyBoardMaker, Color
-from async_vk_bots.ext import View, controller
-from async_vk_bots.ext.DataModels.Message.MessageEvent import MessageEvent
-from async_vk_bots.ext.DataModels.Message.Message import Message
-token = ""
+from async_vk_bots.ext import Controller, controller
+
 group_id = 0
-
 bot = Bot(group_id)
-menu = KeyBoardMaker(False, True, bot)
+
+menu = KeyBoardMaker(False)\
+    .add_button("Hello world!", Color.Positive, {"action": "hello_world"})\
+    .add_button("Hi", Color.Primary, {"action": "hi"})
+default_kb = menu.generate()
 
 
-@menu.callback("Get my ID", Color.Primary, {"action": "get_id"})
-async def get_id(event: MessageEvent):
-    if event.conversation_message_id:
-        await bot.api.edit(event.user_id, f"Your id is {event.user_id}!",
-                           conversation_message_id=event.conversation_message_id, keyboard=menu)
-
-
-@menu.callback("Clear", Color.Secondary, {"action": "clear"})
-async def clear(event: MessageEvent):
-    if event.conversation_message_id:
-        # Can't use edit and snackbar at the same time
-        await bot.api.edit(event.user_id, f"Menu",
-                           conversation_message_id=event.conversation_message_id, keyboard=menu)
-
-
-menu = menu.generate()
-
-default_kb = KeyBoardMaker(False, bot=bot)\
-    .add_button("GetMenu", Color.Positive, payload={"button": "menu"})
-
-
-@default_kb.callback("NewMenu", Color.Primary, payload={"action": "get_menu"})
-async def get_menu(event: MessageEvent):
-    await bot.api.send(event.user_id, "Menu", keyboard=menu)
-    return {
-        "type": "show_snackbar",
-        "text": "You've got new menu!"
-    }
-
-
-default_kb = default_kb.generate()
-
-
-@bot.command(r"GetMenu")
-async def get_menu(msg: Message, data, reply):
-    await reply("Menu", keyboard=menu)
-
-
-@controller("NewHype", bot=bot)
-class NewHype(View):
+@controller(r"Hello world!", bot=bot)
+class HelloController(Controller):
+    # You can bind controller to bot
     async def text(self):
-        await self.reply("Hype ()_()", keyboard=default_kb)
+        # self.reply is binding for self.api.send, where id already set as self.model.from_id
+        await self.reply("Hi from simple message!")
 
     async def payload(self):
-        await self.reply(self.message.payload, keyboard=default_kb)
+        # self.model is instance of async_vk_bots.ext.DataModels.Message.Message.Message
+        await self.reply(f"Hello from button message! Payload: {json.dumps(self.model.payload)}")
 
 
 @bot.command(r"Hi")
 async def hype(msg, data, reply):
+    # msg is like self.model in controllers
+    # data is result of regexp
     await reply("Hello world", keyboard=default_kb)
 
 
-bot.run(token)
+@bot.on_ready
+async def on_ready():
+    print("Ready")
+
+
+bot.run("token", debug=True)
